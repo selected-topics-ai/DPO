@@ -40,7 +40,7 @@ def train(checkpoint:str="HuggingFaceTB/SmolLM-135M-Instruct",
         gc.collect()
         clear_cache()
 
-        pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(device)
+        pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(get_device())
         pi_model.config.use_cache = False
 
         args = DPOConfig(
