@@ -9,7 +9,7 @@ from utils import seed_everything, get_device, clear_cache
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
-def train(checkpoint: str = "HuggingFaceTB/SmolLM-135M-Instruct",
+def train(checkpoint: str = "HuggingFaceTB/SmolLM2-135M-Instruct",
           dataset: str = "trl-lib/ultrafeedback_binarized",
           output_dir: str = "./SMOL_DPO_FORWARD_KL",
           betas: List[float] = frozenset([0.1]),
@@ -22,7 +22,8 @@ def train(checkpoint: str = "HuggingFaceTB/SmolLM-135M-Instruct",
           max_length: int = 1536,
           max_prompt_length: int = 1024,
           logging_steps: int = 1,
-          optimizer: str = "paged_adamw_8bit" if get_device() == "cuda" else "adamw_torch"
+          optimizer: str = "paged_adamw_8bit" if get_device() == "cuda" else "adamw_torch",
+          device=get_device(),
           ):
 
     print("Prepare dataset...")

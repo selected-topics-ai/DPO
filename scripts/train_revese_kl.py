@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from utils import get_device, seed_everything, clear_cache
 
 
-def train(checkpoint:str="HuggingFaceTB/SmolLM-135M-Instruct",
+def train(checkpoint:str="HuggingFaceTB/SmolLM2-135M-Instruct",
           dataset:str="trl-lib/ultrafeedback_binarized",
           output_dir:str="./SMOL_DPO_REVERSE_KL",
           betas: List[float] = frozenset([0.05, 0.1, 1.0, 5.0]),
@@ -21,7 +21,8 @@ def train(checkpoint:str="HuggingFaceTB/SmolLM-135M-Instruct",
           max_length:int=1536,
           max_prompt_length:int=1024,
           logging_steps:int=1,
-          optimizer:str= "paged_adamw_8bit" if get_device() == "cuda" else "adamw_torch"
+          optimizer:str= "paged_adamw_8bit" if get_device() == "cuda" else "adamw_torch",
+          device=get_device()
           ):
 
     print("Prepare dataset...")
@@ -40,7 +41,7 @@ def train(checkpoint:str="HuggingFaceTB/SmolLM-135M-Instruct",
         gc.collect()
         clear_cache()
 
-        pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(get_device())
+        pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(device)
         pi_model.config.use_cache = False
 
         args = DPOConfig(

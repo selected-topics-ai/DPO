@@ -7,7 +7,7 @@ from trl.trainer.dpo_config import FDivergenceType
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def train(checkpoint = "HuggingFaceTB/SmolLM-135M-Instruct",
+def train(checkpoint = "HuggingFaceTB/SmolLM2-135M-Instruct",
           output_dir:str="./SMOL_DPO_ALPHA_DIVERGENCE",
           dataset:str="trl-lib/ultrafeedback_binarized",
           beta:float=0.1,
@@ -22,6 +22,7 @@ def train(checkpoint = "HuggingFaceTB/SmolLM-135M-Instruct",
           gradient_accumulation_steps:int=4,
           optimizer:str="paged_adamw_8bit" if get_device() == "cuda" else "adamw_torch",
           f_alpha_divergence_coef:float=0.5,
+          device=get_device(),
           ):
 
     ds = load_dataset(dataset)
@@ -31,7 +32,7 @@ def train(checkpoint = "HuggingFaceTB/SmolLM-135M-Instruct",
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     tokenizer.pad_token = tokenizer.eos_token
 
-    pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(get_device())
+    pi_model = AutoModelForCausalLM.from_pretrained(checkpoint).to(device)
     pi_model.config.use_cache = False
 
     divergence = FDivergenceType.ALPHA_DIVERGENCE
@@ -65,6 +66,7 @@ def train(checkpoint = "HuggingFaceTB/SmolLM-135M-Instruct",
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser("TRAIN_DPO_ALPHA_DIVERGENCE")
 
     parser.add_argument("--train_batch_size", type=int, default=4)
