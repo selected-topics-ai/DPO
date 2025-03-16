@@ -1,11 +1,9 @@
 import gc
-
-import pandas as pd
 import torch
+import pandas as pd
 
 from tqdm import tqdm
 from typing import List
-from pandas import DataFrame
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from utils import get_device, clear_cache
@@ -32,30 +30,33 @@ def format_text(data, tokenizer):
         promt = [el[0]]
         formatted_promt = tokenizer.apply_chat_template(promt, add_generation_prompt=True, tokenize=False)
         promts.append(formatted_promt)
-    return {'promt': promts}
+    return {'prompt': promts}
 
-def tokenize_function(rows, tokenizer, promt_max_length=1024):
-    return tokenizer(rows["promt"],
+def tokenize_function(rows, tokenizer, prompt_max_length=1024):
+    return tokenizer(rows["prompt"],
                      padding="max_length",
                      truncation=True,
-                     max_length=promt_max_length)
+                     max_length=prompt_max_length)
 
 
 def generate(checkpoints:List[str],
              max_promt_len:int,
              max_generation_len:int,
-             temperature:float=0.1,
+             temperature:float=0.8,
              top_p:float=0.95,
              top_k:int=50,
              texts_batch_size:int=2):
 
     for checkpoint in tqdm(checkpoints):
 
+        print("Generating answers for checkpoint {}".format(checkpoint))
+
         tokenizer = AutoTokenizer.from_pretrained(checkpoint, padding_side='left')
         model = AutoModelForCausalLM.from_pretrained(checkpoint)
 
         ds = (load_dataset("trl-lib/ultrafeedback_binarized", split="test")
               .filter(lambda x: len(x['chosen'][0]['content']) < max_promt_len)
+              .select(indices=[i for i in range(100)])
               .map(lambda x: format_text(x, tokenizer), remove_columns=['chosen', 'rejected', 'score_chosen', 'score_rejected'], batched=True)
               .map(lambda x: tokenize_function(x, tokenizer, max_promt_len), batched=True))
 
@@ -68,7 +69,7 @@ def generate(checkpoints:List[str],
 
         with torch.inference_mode():
 
-            for batch in dl:
+            for batch in tqdm(dl, desc="Generating answers"):
 
                 input_ids = batch["input_ids"].to(get_device())
                 attention_mask = batch["attention_mask"].to(get_device())
@@ -106,21 +107,22 @@ def generate(checkpoints:List[str],
 if __name__ == "__main__":
 
     PROMT_MAX_LENGTH = 1024
-    ASSISTANT_ANSWER_MAX_LENGTH = 50
+    ASSISTANT_ANSWER_MAX_LENGTH = 512
 
     checkpoints = [
-        "HuggingFaceTB/SmolLM-135M-Instruct",
-        # "mikheevshow/DPO-alpha-divergence-alpha_0_5_beta_0_1",
-        # "mikheevshow/DPO-forward_kl_beta_0_1",
-        # "mikheevshow/DPO-js_divergence_beta_0_1",
-        # "mikheevshow/DPO-reverse_kl_beta_0_1",
-        # "mikheevshow/DPO-reverse_kl_beta_5_0",
-        # "mikheevshow/DPO-reverse_kl_beta_1_0",
-        # "mikheevshow/DPO-reverse_kl_beta_0_05"
+        # 'mikheevshow/SMOL_DPO_JS_DIVERGENCE-checkpoint-200',
+        # 'mikheevshow/SMOL_DPO_REVERSE_KL_0_05-checkpoint-200',
+        'mikheevshow/SMOL_DPO_REVERSE_KL_0_1-checkpoint-200',
+        'mikheevshow/SMOL_DPO_REVERSE_KL_1_0-checkpoint-200',
+        'mikheevshow/SMOL_DPO_REVERSE_KL_5_0-checkpoint-200',
+        'mikheevshow/SMOL_DPO_ALPHA_DIVERGENCE-checkpoint-200',
+        'mikheevshow/SMOL_DPO_FORWARD_KL_0_1-checkpoint-200',
+        'HuggingFaceTB/SmolLM2-135M-Instruct'
     ]
 
-    generate(checkpoints, max_promt_len=PROMT_MAX_LENGTH, max_generation_len=ASSISTANT_ANSWER_MAX_LENGTH)
-
+    generate(checkpoints,
+             max_promt_len=PROMT_MAX_LENGTH,
+             max_generation_len=ASSISTANT_ANSWER_MAX_LENGTH,)
 
 # Вероятности обученной модели
 # Сунуть их в forward sft модели

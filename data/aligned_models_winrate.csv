@@ -1,0 +1,8 @@
+,model,winrate
+0,SMOL_DPO_REVERSE_KL_1_0-checkpoint-200-temp-0_8-top_p-0_95,0.53
+1,SMOL_DPO_REVERSE_KL_0_1-checkpoint-200-temp-0_8-top_p-0_95,0.57
+2,SMOL_DPO_FORWARD_KL_0_1-checkpoint-200-temp-0_8-top_p-0_95,0.54
+3,SMOL_DPO_ALPHA_DIVERGENCE-checkpoint-200-temp-0_8-top_p-0_95,0.59
+4,SMOL_DPO_JS_DIVERGENCE-checkpoint-200-temp-0_8-top_p-0_95,0.52
+5,SMOL_DPO_REVERSE_KL_0_05-checkpoint-200-temp-0_8-top_p-0_95,0.6
+6,SMOL_DPO_REVERSE_KL_5_0-checkpoint-200-temp-0_8-top_p-0_95,0.61

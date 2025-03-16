@@ -33,3 +33,17 @@ def clear_cache():
         torch.cuda.empty_cache()
     if torch.mps.is_available():
         torch.mps.empty_cache()
+
+
+def get_assistant_answer_token_ids(model_output) -> torch.Tensor:
+    assistant_answer_token_ids = torch.tensor([1, 520, 9531])
+    assistant_answers_start_indexes = []
+    for seq in model_output.sequences:
+        for i in range(seq.shape[0] - 1):
+            if seq[i: i + 3].shape[0] == 3:
+                if (seq[i: i + 3] == assistant_answer_token_ids).all().item():
+                    assistant_answers_start_indexes.append(i + 4)
+
+    # temporary make for one sequence
+    start_from = assistant_answers_start_indexes[0]
+    return model_output.sequences[0][start_from:]

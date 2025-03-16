@@ -1,6 +1,10 @@
+import argparse
 from typing import List
 from utils import get_device
 from transformers import PreTrainedTokenizerFast
+from datasets import load_dataset
+import os
+import pandas as pd
 
 import llm_blender
 
@@ -37,8 +41,7 @@ def generate_answer(messages: List[any],
     return get_assistant_answer(output_tokens)
 
 
-blender = llm_blender.Blender()
-blender.loadranker("llm-blender/PairRM", device=str(get_device()))
+
 
 def calc_winrate(promts: List[str], aligned_answers: List[str], base_answers: List[str]) -> float:
 
@@ -60,3 +63,31 @@ def calc_winrate(promts: List[str], aligned_answers: List[str], base_answers: Li
 
     return float(aligned_answer_win_count) / len(aligned_answers)
 
+
+if __name__ == "__main__":
+
+    blender = llm_blender.Blender()
+    blender.loadranker("llm-blender/PairRM", device=str(get_device()))
+
+    ds = (load_dataset("trl-lib/ultrafeedback_binarized", split="test")
+          .filter(lambda x: len(x['chosen'][0]['content']) < 1024)
+          .select(indices=[i for i in range(100)]))
+
+    prompts = []
+
+    for row in ds['chosen']:
+        prompts.append(row[0]['content'])
+
+    aligned_models_winrate = {}
+
+    sft_answers = pd.read_csv('data/HuggingFaceTB/SmolLM2-135M-Instruct-temp-0_8-top_p-0_95')
+
+    for path in os.walk('./data/mikheevshow'):
+        for filename in path[2]:
+            filepath = path[0] + '/' + filename
+            aligned_model_ds = pd.read_csv(filepath)
+            wr = calc_winrate(prompts, aligned_model_ds.fillna('')['answer'], sft_answers.fillna('')['answer'])
+            aligned_models_winrate[filename] = wr
+            print(filename, wr)
+
+    pd.DataFrame(aligned_models_winrate).melt().to_csv('aligned_models_winrate.csv')
